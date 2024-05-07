@@ -38,13 +38,17 @@
       <img src="logo.png" alt="Logo" class="logo" />
       <div class="workouts__controls">
         <div class="sort__container">
-          <label for="sort">Sort</label>
-          <select name="sort" id="sort">
+          <!-- Default -->
+          <!-- <i class="fa-solid fa-sort"></i> -->
+          <!-- Ascending -->
+          <!-- <i class="fa-solid fa-sort-up"></i> -->
+          <!-- Descending -->
+          <!-- <i class="fa-solid fa-sort-down"></i> -->
+          <button id="sort-distance">Distance</button>
+          <span class="sort-distance-status">
+            <i class="fa-solid fa-sort"></i>
+          </span>
         </div>
-          <option value="running">Running</option>
-          <option value="cycling">Cycling</option>
-          <option value="" selected>None</option>
-        </select>
       </div>
       <ul class="workouts">
         <form class="form hidden">

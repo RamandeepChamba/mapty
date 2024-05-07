@@ -64,7 +64,8 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
-const sortSelectEl = document.querySelector('#sort');
+const sortDistanceBtnEl = document.querySelector('#sort-distance');
+const sortDistanceStatusEl = document.querySelector('.sort-distance-status i');
 
 class App {
   #map;
@@ -75,6 +76,7 @@ class App {
   #editingId;
   #deleteDuration = 500;
   #editedDuration = 2000;
+  #sortDistanceStatus = null; // 0 - ascending, 1 - desc, null - none
 
   constructor() {
     this._getPosition();
@@ -92,7 +94,10 @@ class App {
       this._handleListClick.bind(this)
     );
     // Handle sort select change filter
-    sortSelectEl.addEventListener('change', this._sortWorkouts.bind(this));
+    sortDistanceBtnEl.addEventListener(
+      'click',
+      this._sortByDistance.bind(this)
+    );
   }
 
   _getPosition() {
@@ -226,6 +231,9 @@ class App {
       workoutEl.outerHTML = html;
     }
     this._workoutAdded(workout.id);
+  }
+  _renderAllWorkouts() {
+    this.#workouts.forEach(workout => this._renderWorkout(workout));
   }
   _moveToPopup(e) {
     const workoutEl = e.target.closest('.workout');
@@ -466,38 +474,54 @@ class App {
     });
   }
   // Sort / Filter
-  _sortWorkouts() {
-    const type = sortSelectEl.value;
-    if (!type) {
-      // Render original workouts
-      // - remove all workout el
-      this._removeAllWorkoutEl();
-      // - add all new workout el
-      this.#workouts.forEach(workout => {
-        this._renderWorkout(workout);
-      });
-    } else {
-      const cyclingWorkouts = this.#workouts.filter(
-        work => work.type === 'cycling'
-      );
-      const runningWorkouts = this.#workouts.filter(
-        work => work.type === 'running'
-      );
-      let sortedWorkouts;
-
-      if (type === 'running') {
-        sortedWorkouts = [...cyclingWorkouts, ...runningWorkouts];
-      }
-      if (type === 'cycling') {
-        sortedWorkouts = [...runningWorkouts, ...cyclingWorkouts];
-      }
-      // Render
-      // - remove all workout el
-      this._removeAllWorkoutEl();
-      // - add all new workout el
-      sortedWorkouts.forEach(workout => {
-        this._renderWorkout(workout);
-      });
+  // - By date added
+  _sortByDate() {
+    // -- Ascending (default)
+    this.#workouts.sort((a, b) => a.id - b.id);
+  }
+  // - By distance
+  _sortByDistance() {
+    if (this.#sortDistanceStatus !== 0 && !this.#sortDistanceStatus) {
+      // console.log('is null, changing to ascending');
+      this.#sortDistanceStatus = 0;
+      this.#workouts.sort((a, b) => b.distance - a.distance);
+    } else if (this.#sortDistanceStatus === 0) {
+      // console.log('is ascending, changing to descending');
+      this.#sortDistanceStatus = 1;
+      this.#workouts.sort((a, b) => a.distance - b.distance);
+    } else if (this.#sortDistanceStatus === 1) {
+      // console.log('is descending, changing to null');
+      this.#sortDistanceStatus = null;
+      // sort by date added
+      this._sortByDate();
+    }
+    // change ui state of distance
+    this._updateSortDistanceStatusUI();
+    console.log(this.#workouts);
+    // remove all workout el
+    this._removeAllWorkoutEl();
+    // render sorted workouts
+    this._renderAllWorkouts();
+  }
+  _updateSortDistanceStatusUI() {
+    switch (this.#sortDistanceStatus) {
+      case null:
+        sortDistanceStatusEl.classList.remove('fa-sort-up');
+        sortDistanceStatusEl.classList.remove('fa-sort-down');
+        sortDistanceStatusEl.classList.add('fa-sort');
+        break;
+      case 0:
+        sortDistanceStatusEl.classList.add('fa-sort-up');
+        sortDistanceStatusEl.classList.remove('fa-sort-down');
+        sortDistanceStatusEl.classList.remove('fa-sort');
+        break;
+      case 1:
+        sortDistanceStatusEl.classList.add('fa-sort-down');
+        sortDistanceStatusEl.classList.remove('fa-sort-up');
+        sortDistanceStatusEl.classList.remove('fa-sort');
+        break;
+      default:
+        break;
     }
   }
   reset() {
