@@ -65,7 +65,9 @@ const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
 const sortDistanceBtnEl = document.querySelector('#sort-distance');
+const sortDurationBtnEl = document.querySelector('#sort-duration');
 const sortDistanceStatusEl = document.querySelector('.sort-distance-status i');
+const sortDurationStatusEl = document.querySelector('.sort-duration-status i');
 
 class App {
   #map;
@@ -76,7 +78,9 @@ class App {
   #editingId;
   #deleteDuration = 500;
   #editedDuration = 2000;
-  #sortDistanceStatus = null; // 0 - ascending, 1 - desc, null - none
+  // had to make below objects as need to use them by reference later
+  #sortDistanceStatus = { status: null }; // 0 - ascending, 1 - desc, null - none
+  #sortDurationStatus = { status: null }; // 0 - ascending, 1 - desc, null - none
 
   constructor() {
     this._getPosition();
@@ -96,7 +100,11 @@ class App {
     // Handle sort select change filter
     sortDistanceBtnEl.addEventListener(
       'click',
-      this._sortByDistance.bind(this)
+      this._handleSortByFilter.bind(this, 'distance')
+    );
+    sortDurationBtnEl.addEventListener(
+      'click',
+      this._handleSortByFilter.bind(this, 'duration')
     );
   }
 
@@ -474,51 +482,99 @@ class App {
     });
   }
   // Sort / Filter
+  // - helpers
+  _getFilterStatusReference(filter) {
+    if (filter === 'distance') {
+      return this.#sortDistanceStatus;
+    }
+    // Duration
+    if (filter === 'duration') {
+      return this.#sortDurationStatus;
+    }
+  }
+  _changeSortStatus(filter) {
+    const sortStatus = this._getFilterStatusReference(filter);
+    // change state / status
+    if (sortStatus.status !== 0 && !sortStatus.status) {
+      // console.log('is null, changing to ascending');
+      sortStatus.status = 0;
+    } else if (sortStatus.status === 0) {
+      // console.log('is ascending, changing to descending');
+      sortStatus.status = 1;
+    } else if (sortStatus.status === 1) {
+      // console.log('is descending, changing to null');
+      sortStatus.status = null;
+    }
+    // Update sort status in UI
+    this._updateSortStatusUI(filter);
+  }
+  _resetSortStatus(filter) {
+    const sortStatus = this._getFilterStatusReference(filter);
+    sortStatus.status = null;
+    this._updateSortStatusUI(filter);
+  }
   // - By date added
-  _sortByDate() {
+  _sortByDefault() {
     // -- Ascending (default)
     this.#workouts.sort((a, b) => a.id - b.id);
   }
-  // - By distance
-  _sortByDistance() {
-    if (this.#sortDistanceStatus !== 0 && !this.#sortDistanceStatus) {
-      // console.log('is null, changing to ascending');
-      this.#sortDistanceStatus = 0;
-      this.#workouts.sort((a, b) => b.distance - a.distance);
-    } else if (this.#sortDistanceStatus === 0) {
-      // console.log('is ascending, changing to descending');
-      this.#sortDistanceStatus = 1;
-      this.#workouts.sort((a, b) => a.distance - b.distance);
-    } else if (this.#sortDistanceStatus === 1) {
-      // console.log('is descending, changing to null');
-      this.#sortDistanceStatus = null;
-      // sort by date added
-      this._sortByDate();
+  _handleSortByFilter(filter) {
+    // reset rest of the filter(s) status
+    if (filter === 'distance') {
+      this._resetSortStatus('duration');
     }
-    // change ui state of distance
-    this._updateSortDistanceStatusUI();
-    console.log(this.#workouts);
+    if (filter === 'duration') {
+      this._resetSortStatus('distance');
+    }
+    // change status in code and in UI
+    this._changeSortStatus(filter);
+    const sortStatus = this._getFilterStatusReference(filter);
+    // sort based on status
+    if (sortStatus.status === null) {
+      // default
+      this._sortByDefault();
+    } else {
+      // sort by filter
+      this._sortByFilter(filter);
+    }
     // remove all workout el
     this._removeAllWorkoutEl();
     // render sorted workouts
     this._renderAllWorkouts();
   }
-  _updateSortDistanceStatusUI() {
-    switch (this.#sortDistanceStatus) {
+  _sortByFilter(filter) {
+    // Implements ascending or descending
+    const sortStatus = this._getFilterStatusReference(filter);
+    if (sortStatus.status === 0) {
+      this.#workouts.sort((a, b) => b[filter] - a[filter]);
+    } else if (sortStatus.status === 1) {
+      this.#workouts.sort((a, b) => a[filter] - b[filter]);
+    }
+  }
+  _updateSortStatusUI(filter) {
+    let sortStatusEl;
+    const sortStatus = this._getFilterStatusReference(filter);
+    if (filter === 'distance') {
+      sortStatusEl = sortDistanceStatusEl;
+    }
+    if (filter === 'duration') {
+      sortStatusEl = sortDurationStatusEl;
+    }
+    switch (sortStatus.status) {
       case null:
-        sortDistanceStatusEl.classList.remove('fa-sort-up');
-        sortDistanceStatusEl.classList.remove('fa-sort-down');
-        sortDistanceStatusEl.classList.add('fa-sort');
+        sortStatusEl.classList.remove('fa-sort-up');
+        sortStatusEl.classList.remove('fa-sort-down');
+        sortStatusEl.classList.add('fa-sort');
         break;
       case 0:
-        sortDistanceStatusEl.classList.add('fa-sort-up');
-        sortDistanceStatusEl.classList.remove('fa-sort-down');
-        sortDistanceStatusEl.classList.remove('fa-sort');
+        sortStatusEl.classList.add('fa-sort-up');
+        sortStatusEl.classList.remove('fa-sort-down');
+        sortStatusEl.classList.remove('fa-sort');
         break;
       case 1:
-        sortDistanceStatusEl.classList.add('fa-sort-down');
-        sortDistanceStatusEl.classList.remove('fa-sort-up');
-        sortDistanceStatusEl.classList.remove('fa-sort');
+        sortStatusEl.classList.add('fa-sort-down');
+        sortStatusEl.classList.remove('fa-sort-up');
+        sortStatusEl.classList.remove('fa-sort');
         break;
       default:
         break;

@@ -6,7 +6,7 @@
 3. Ability to delete all workouts
 4. Ability to sort workouts by a certain field (e.g. distance) ⚠️
 
-- when new item added (reset filter (sort by date) OR sort workouts including newly added item)
+- when new item added, via edit or add, reset filter (sort by date) OR apply filter on workouts again including newly added item
 
 * on re-rendering workouts don't show workout added style (box shadow glow)
 
