@@ -81,6 +81,7 @@ class App {
   // had to make below objects as need to use them by reference later
   #sortDistanceStatus = { status: null }; // 0 - ascending, 1 - desc, null - none
   #sortDurationStatus = { status: null }; // 0 - ascending, 1 - desc, null - none
+  #activeFilter = null; // distance, duration, null
 
   constructor() {
     this._getPosition();
@@ -175,7 +176,7 @@ class App {
       .openPopup();
     workout.marker = marker;
   }
-  _renderWorkout(workout) {
+  _renderWorkout(workout, style = true, highlightId = null) {
     let html = `
       <li class="workout workout--${workout.type}" data-id="${workout.id}">
         <h2 class="workout__title">
@@ -238,10 +239,16 @@ class App {
       );
       workoutEl.outerHTML = html;
     }
-    this._workoutAdded(workout.id);
+    if (style) {
+      this._workoutAdded(workout.id);
+    } else if (highlightId && workout.id === highlightId) {
+      this._workoutAdded(highlightId);
+    }
   }
-  _renderAllWorkouts() {
-    this.#workouts.forEach(workout => this._renderWorkout(workout));
+  _renderAllWorkouts(highlightId = null) {
+    this.#workouts.forEach(workout =>
+      this._renderWorkout(workout, false, highlightId)
+    );
   }
   _moveToPopup(e) {
     const workoutEl = e.target.closest('.workout');
@@ -297,12 +304,14 @@ class App {
     const workoutEl = document.querySelector(`.workout[data-id="${id}"]`);
     workoutEl.classList.add('workout--hidden');
   }
+  /*
   _showWorkoutEl(id) {
     const workoutEl = document.querySelector(`.workout[data-id="${id}"]`);
     // update workout ui
     // this._renderWorkout(this.#workouts.find(work => work.id === id));
     workoutEl.classList.remove('workout--hidden');
   }
+  */
   _fetchWorkout(id) {
     return this.#workouts.find(work => work.id === id);
   }
@@ -421,6 +430,7 @@ class App {
       // render workout on map
       this._renderWorkoutMarker(workout);
     }
+
     // render workout on list
     this._renderWorkout(workout);
 
@@ -433,10 +443,18 @@ class App {
       // - create new
       this._renderWorkoutMarker(workout);
       // make workout element visible
-      this._showWorkoutEl(workout.id);
+      // this._showWorkoutEl(workout.id);
       // stop editing status
       this.#editing = false;
       this.#editingId = null;
+    }
+
+    // apply sort filter, if any
+    if (this.#activeFilter) {
+      // sort
+      this._sortByFilter(this.#activeFilter);
+      // re-render all workouts on list (sorted)
+      this._reRenderAllWorkoutEl(workout.id);
     }
     // hide form
     this._hideForm();
@@ -452,6 +470,10 @@ class App {
     setTimeout(function () {
       workout.classList.remove('workout--edited');
     }, this.#editedDuration);
+  }
+  _reRenderAllWorkoutEl(highlightId = null) {
+    this._removeAllWorkoutEl();
+    this._renderAllWorkouts(highlightId);
   }
   // Delete
   _removeWorkout(id) {
@@ -504,6 +526,8 @@ class App {
     } else if (sortStatus.status === 1) {
       // console.log('is descending, changing to null');
       sortStatus.status = null;
+      // reset active filter
+      this.#activeFilter = null;
     }
     // Update sort status in UI
     this._updateSortStatusUI(filter);
@@ -519,6 +543,8 @@ class App {
     this.#workouts.sort((a, b) => a.id - b.id);
   }
   _handleSortByFilter(filter) {
+    // assign active filter
+    this.#activeFilter = filter;
     // reset rest of the filter(s) status
     if (filter === 'distance') {
       this._resetSortStatus('duration');
@@ -537,10 +563,7 @@ class App {
       // sort by filter
       this._sortByFilter(filter);
     }
-    // remove all workout el
-    this._removeAllWorkoutEl();
-    // render sorted workouts
-    this._renderAllWorkouts();
+    this._reRenderAllWorkoutEl();
   }
   _sortByFilter(filter) {
     // Implements ascending or descending
