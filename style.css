@@ -68,6 +68,41 @@ a:visited {
   align-self: center;
   margin-bottom: 4rem;
 }
+/* sidebar controls */
+.workouts__controls {
+  display: flex;
+  justify-content: space-between;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+}
+.sidebar:hover .workouts__controls {
+  opacity: 1;
+  visibility: visible;
+}
+.workouts__controls button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.8rem;
+  cursor: pointer;
+}
+.sort__container button:hover {
+  color: #aaa;
+}
+.sort__container button:hover + span {
+  color: #aaa;
+}
+.sort__container > span {
+  font-size: 1.8rem;
+  margin-left: 0.8rem;
+}
+.sort__container > span:not(:last-child) {
+  margin-right: 2rem;
+}
+.delete-all:hover {
+  color: #f03e3e;
+}
 .workouts {
   list-style: none;
   height: 77vh;

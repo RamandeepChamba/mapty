@@ -68,6 +68,7 @@ const sortDistanceBtnEl = document.querySelector('#sort-distance');
 const sortDurationBtnEl = document.querySelector('#sort-duration');
 const sortDistanceStatusEl = document.querySelector('.sort-distance-status i');
 const sortDurationStatusEl = document.querySelector('.sort-duration-status i');
+const deleteAllEl = document.querySelector('.delete-all');
 
 class App {
   #map;
@@ -107,6 +108,8 @@ class App {
       'click',
       this._handleSortByFilter.bind(this, 'duration')
     );
+    // Handle delete all
+    deleteAllEl.addEventListener('click', this._removeAllWorkouts.bind(this));
   }
 
   _getPosition() {
@@ -480,8 +483,17 @@ class App {
     const index = this.#workouts.findIndex(work => work.id === id);
     // remove marker
     this._removeMarker(id);
+    // remove workout from UI
+    this._removeWorkoutEl(id);
     // remove workout from array
     this.#workouts.splice(index, 1);
+  }
+  _removeMarker(id) {
+    const workout = this.#workouts.find(work => work.id === id);
+    // delete map marker
+    workout.marker.remove();
+  }
+  _removeWorkoutEl(id) {
     // add deleting class to workout element
     const workoutEl = document.querySelector(`.workout[data-id="${id}"]`);
     workoutEl.classList.add('workout--deleting');
@@ -490,11 +502,6 @@ class App {
       workoutEl.remove();
     }, this.#deleteDuration);
   }
-  _removeMarker(id) {
-    const workout = this.#workouts.find(work => work.id === id);
-    // delete map marker
-    workout.marker.remove();
-  }
   _removeAllWorkoutEl() {
     this.#workouts.forEach(workout => {
       const workoutEl = document.querySelector(
@@ -502,6 +509,24 @@ class App {
       );
       workoutEl.remove();
     });
+  }
+  // Delete all
+  _removeAllWorkouts() {
+    // remove all workouts
+    // METHOD #1
+    // can't mutate/modify the array which we are iterating (unexpected results), so iterating over copy
+    this.#workouts.slice().forEach(workout => this._removeWorkout(workout.id));
+    /*
+    // METHOD #2
+    this.#workouts.forEach(workout => {
+      // remove markers
+      this._removeMarker(workout.id);
+      // remove UI el
+      this._removeWorkoutEl(workout.id);
+    });
+    // remove from array
+    this.#workouts.splice(0);
+    */
   }
   // Sort / Filter
   // - helpers
