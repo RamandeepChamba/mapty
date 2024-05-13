@@ -4,7 +4,6 @@ class Workout {
   date = new Date();
   id = (Date.now() + '').slice(-10);
   clicks = 0;
-  marker = null;
 
   constructor(coords, distance, duration) {
     this.coords = coords; // [lat, lng]
@@ -74,6 +73,7 @@ class App {
   #map;
   #mapEvent;
   #workouts = [];
+  #markers = [];
   #mapZoomLevel = 13;
   #editing = false;
   #editingId;
@@ -85,11 +85,9 @@ class App {
   #activeFilter = null; // distance, duration, null
 
   constructor() {
-    this._getPosition();
-
     // Get data from local storage
     this._getLocalStorage();
-
+    this._getPosition();
     // Handle form submit
     form.addEventListener('submit', this._handleWorkout.bind(this));
     // Handle workout type change
@@ -177,7 +175,12 @@ class App {
         `${workout.type === 'running' ? '🏃‍♂️' : '🚴'} ${workout.description}`
       )
       .openPopup();
-    workout.marker = marker;
+    const markerRef = {
+      marker,
+      parentId: workout.id,
+    };
+    // save reference to marker
+    this.#markers.push(markerRef);
   }
   _renderWorkout(workout, style = true, highlightId = null) {
     let html = `
@@ -271,7 +274,34 @@ class App {
     const data = JSON.parse(localStorage.getItem('workouts'));
     if (!data) return;
 
-    this.#workouts = data;
+    // TODO
+    // remake workout objects from local storage
+    this.#workouts = data.map(workout => {
+      let newWorkout;
+      if (workout.type === 'running') {
+        newWorkout = new Running(
+          workout.coords,
+          workout.distance,
+          workout.duration,
+          workout.cadence
+        );
+      }
+      if (workout.type === 'cycling') {
+        newWorkout = new Cycling(
+          workout.coords,
+          workout.distance,
+          workout.duration,
+          workout.elevationGain
+        );
+      }
+      // preserve date, id
+      newWorkout.id = workout.id;
+      newWorkout.date = workout.date;
+
+      return newWorkout;
+    });
+    // push remade workouts
+    // this.#workouts = data;
 
     this.#workouts.forEach(work => {
       // render list
@@ -366,10 +396,9 @@ class App {
       if (type === 'cycling') {
         newWorkout = new Cycling(workout.coords, distance, duration, inputs[2]);
       }
-      // preserve date, id and marker
+      // preserve date, id
       newWorkout.id = workout.id;
       newWorkout.date = workout.date;
-      newWorkout.marker = workout.marker;
 
       return newWorkout;
     };
@@ -382,8 +411,13 @@ class App {
     const type = inputType.value;
     const distance = +inputDistance.value;
     const duration = +inputDuration.value;
-    const { lat, lng } = this.#mapEvent.latlng;
     let workout;
+    let lat, lng;
+
+    if (!this.#editing) {
+      lat = this.#mapEvent.latlng.lat;
+      lng = this.#mapEvent.latlng.lng;
+    }
 
     // if workout running
     if (type === 'running') {
@@ -430,7 +464,7 @@ class App {
     if (!this.#editing) {
       // add new object to workout array
       this.#workouts.push(workout);
-      // render workout on map
+      // render workout marker on map
       this._renderWorkoutMarker(workout);
     }
 
@@ -462,7 +496,7 @@ class App {
     // hide form
     this._hideForm();
     // set local storage to all workouts
-    // this._setLocalStorage();
+    this._setLocalStorage();
   }
   _workoutAdded(id) {
     // Fetch workout element
@@ -487,11 +521,16 @@ class App {
     this._removeWorkoutEl(id);
     // remove workout from array
     this.#workouts.splice(index, 1);
+    // Update local storage
+    this._setLocalStorage();
   }
-  _removeMarker(id) {
-    const workout = this.#workouts.find(work => work.id === id);
+  _removeMarker(parentId) {
+    const marker = this.#markers.find(marker => marker.parentId === parentId);
     // delete map marker
-    workout.marker.remove();
+    marker.marker.remove();
+    const markerIndex = this.#markers.indexOf(marker);
+    // remove marker from app state array
+    this.#markers.splice(markerIndex, 1);
   }
   _removeWorkoutEl(id) {
     // add deleting class to workout element
