@@ -270,38 +270,37 @@ class App {
   _setLocalStorage() {
     localStorage.setItem('workouts', JSON.stringify(this.#workouts));
   }
+  _remakeWorkout(workout) {
+    let newWorkout;
+
+    if (workout.type === 'running') {
+      newWorkout = new Running(
+        workout.coords,
+        workout.distance,
+        workout.duration,
+        workout.cadence
+      );
+    }
+    if (workout.type === 'cycling') {
+      newWorkout = new Cycling(
+        workout.coords,
+        workout.distance,
+        workout.duration,
+        workout.elevationGain
+      );
+    }
+    // preserve date, id
+    newWorkout.id = workout.id;
+    newWorkout.date = workout.date;
+
+    return newWorkout;
+  }
   _getLocalStorage() {
     const data = JSON.parse(localStorage.getItem('workouts'));
     if (!data) return;
 
-    // TODO
     // remake workout objects from local storage
-    this.#workouts = data.map(workout => {
-      let newWorkout;
-      if (workout.type === 'running') {
-        newWorkout = new Running(
-          workout.coords,
-          workout.distance,
-          workout.duration,
-          workout.cadence
-        );
-      }
-      if (workout.type === 'cycling') {
-        newWorkout = new Cycling(
-          workout.coords,
-          workout.distance,
-          workout.duration,
-          workout.elevationGain
-        );
-      }
-      // preserve date, id
-      newWorkout.id = workout.id;
-      newWorkout.date = workout.date;
-
-      return newWorkout;
-    });
-    // push remade workouts
-    // this.#workouts = data;
+    this.#workouts = data.map(workout => this._remakeWorkout(workout));
 
     this.#workouts.forEach(work => {
       // render list
