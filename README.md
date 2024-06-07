@@ -1,3 +1,10 @@
+# Mapty Project from udemy JS course by Jonas Schmedtmann
+
+## Let's you keep track of your workouts
+
+1. Choose your workout location from map
+2. Add your workout details like workout type, distance, duration etc.
+
 # Challenges
 
 1. Ability to edit a workout ✅
