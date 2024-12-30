@@ -125,11 +125,16 @@ class App {
     const coords = [latitude, longitude];
     this.#map = L.map('map').setView(coords, this.#mapZoomLevel);
     // console.log(map);
-    L.tileLayer('https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+    // L.tileLayer('https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+    //   attribution:
+    //     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    // }).addTo(this.#map);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}', {
+      foo: 'bar',
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.#map);
-
     // Handling click on map
     this.#map.on('click', this._showForm.bind(this));
 
